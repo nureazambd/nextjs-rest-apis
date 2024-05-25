@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import connect from "../../../../../lib/db";
 import User from "../../../../../lib/modals/user";
 import { Types } from "mongoose";
+import { request } from "http";
 
 const ObjectId = require("mongoose").Types.ObjectId;
 
@@ -91,4 +92,66 @@ export const PATCH = async (request: Request)=>{
             }
         )
     }
-}
+};
+
+export const DELETE = async (request: Request) => {
+  try {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
+
+    // Validate the userId
+    if (!userId) {
+      return new NextResponse(
+        JSON.stringify({ message: "UserId is required" }),
+        {
+          status: 400,
+        }
+      );
+    }
+
+    // Validate if userId is a valid ObjectId
+    if (!Types.ObjectId.isValid(userId)) {
+      return new NextResponse(JSON.stringify({ message: "Invalid userId" }), {
+        status: 400,
+      });
+    }
+
+    await connect();
+
+    // Todo letar
+
+    const deletedUser = await User.findByIdAndDelete(
+        new Types.ObjectId(userId)
+    );
+
+    // Validate the userId
+    if (!deletedUser) {
+        return new NextResponse(
+          JSON.stringify({ message: "User not found" }),
+          {
+            status: 400,
+          }
+        );
+      }
+
+      return new NextResponse(
+        JSON.stringify({
+            message: "User deleted successfully"
+        }),
+        {
+            status: 200
+        }
+    )
+
+  } catch (error) {
+    return new NextResponse(
+        JSON.stringify({
+            message: "Error deleting user",
+            error
+        }),
+        {
+            status: 500
+        }
+    )
+  }
+};
